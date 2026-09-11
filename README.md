@@ -34,6 +34,17 @@ python -m venv .venv
 .venv/bin/python -m flash init
 ```
 
+Variante par `requirements.txt`, pour les environnements où l'installation
+passe par un miroir interne ou une revue IT. Les deux commandes sont
+nécessaires : la première installe les dépendances, la seconde le paquet
+`flash` lui-même — sans elle, `python -m flash` ne trouvera rien, le projet
+utilisant une disposition `src/`.
+
+```bash
+pip install -r requirements-windows.txt   # ou requirements.txt hors Windows
+pip install -e . --no-deps
+```
+
 Pour essayer sans accès au portail, un générateur produit des exports factices
 qui reproduisent les deux comportements qui comptent — historique complet
 re-téléchargé, et corrections rétroactives d'une semaine à l'autre :

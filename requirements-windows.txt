@@ -1,0 +1,11 @@
+# A installer EN PLUS sur le poste Windows equipe d'Office.
+# Sans ces deux paquets, la chaine fonctionne quand meme : elle bascule sur
+# les graphiques matplotlib et ecrit le mail en .eml au lieu de creer un
+# brouillon Outlook.
+#
+#     pip install -r requirements-windows.txt
+
+-r requirements.txt
+
+xlwings>=0.31        # pilotage d'Excel : rafraichissement des TCD, export PNG
+pywin32>=306         # pilotage d'Outlook : creation du brouillon
