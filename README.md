@@ -135,4 +135,5 @@ scripts/                     données de test, template Excel, tâches planifié
 ## Documentation
 
 - `docs/mise-en-production.md` — déploiement Windows, planification, SharePoint
+- `docs/demarrage.md` — procédure de mise en route pas à pas
 - `docs/enquete.md` — que faire quand un graphique paraît faux
