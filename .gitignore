@@ -1,0 +1,26 @@
+# Donnees : jamais versionnees.
+# L'arborescence est recreee par `flash init`, et pointe en production vers le
+# dossier SharePoint synchronise (chemins.racine_donnees).
+data/
+
+# Classeurs produits (le template, lui, est versionné)
+templates/sorties/
+~$*.xlsx
+
+# Secrets et profil navigateur
+.secrets/
+.playwright-profile/
+config/settings.local.toml
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# OS
+.DS_Store
+Thumbs.db

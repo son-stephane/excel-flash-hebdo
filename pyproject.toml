@@ -1,0 +1,38 @@
+[project]
+name = "flash-hebdo"
+version = "0.1.0"
+description = "Automatisation du flash hebdomadaire : extraction du portail, historisation Parquet/DuckDB, publication Excel et diffusion mail"
+requires-python = ">=3.11"
+dependencies = [
+    "pandas>=2.0",
+    "pyarrow>=14.0",
+    "duckdb>=0.10",
+    "matplotlib>=3.8",
+    "openpyxl>=3.1",
+    "jinja2>=3.1",
+    "keyring>=24.0",
+    "playwright>=1.40",
+    "streamlit>=1.30",
+]
+
+[project.optional-dependencies]
+windows = ["xlwings>=0.31", "pywin32>=306"]
+dev = ["pytest>=8.0", "ruff>=0.4"]
+
+[project.scripts]
+flash = "flash.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src", "tests"]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"

@@ -1,0 +1,75 @@
+# ---------------------------------------------------------------------------
+# Configuration du flash hebdomadaire.
+# Les valeurs sensibles (identifiants, destinataires reels) n'ont rien a faire
+# ici : voir config/settings.local.toml (non versionne) et le trousseau Windows.
+# ---------------------------------------------------------------------------
+
+[general]
+# Jour de reference de la semaine ISO (1 = lundi). Sert a nommer les semaines.
+premier_jour_semaine = 1
+# Fuseau utilise pour horodater les extractions.
+fuseau = "Europe/Paris"
+
+[chemins]
+# Racine des donnees. Pointer vers le dossier SharePoint/OneDrive synchronise
+# une fois le projet en production, par exemple :
+# racine_donnees = "C:/Users/<user>/<Entreprise>/Flash hebdo - Documents/data"
+racine_donnees = "data"
+inbox = "data/inbox"
+template_excel = "templates/flash_hebdo.xlsx"
+sorties = "data/90_sorties"
+
+[portail]
+url_connexion = "https://portail.example.internal/login"
+# Profil navigateur persistant : evite de repasser le SSO/MFA chaque semaine.
+profil_navigateur = ".playwright-profile"
+# Service utilise dans le trousseau Windows (keyring) pour stocker le mot de passe.
+service_keyring = "flash-hebdo/portail"
+identifiant = "prenom.nom"
+# Mettre a false pour voir le navigateur travailler (utile au debogage / MFA).
+sans_interface = false
+timeout_ms = 120000
+
+[[portail.rapports]]
+nom = "rapport_a"
+# Identifiant ou libelle de la requete dans le portail. A adapter.
+requete = "REQ_FLASH_A"
+
+[[portail.rapports]]
+nom = "rapport_b"
+requete = "REQ_FLASH_B"
+
+[[portail.rapports]]
+nom = "rapport_c"
+requete = "REQ_FLASH_C"
+
+[excel]
+# Nom de l'onglet plat qui alimente les TCD. Il doit contenir un TABLEAU
+# STRUCTURE (Insertion > Tableau) nomme comme ci-dessous, sinon les TCD ne
+# suivront pas la variation du nombre de lignes.
+onglet_donnees = "DONNEES"
+tableau_donnees = "tbl_donnees"
+onglet_graphiques = "GRAPHIQUES"
+# Laisser vide pour exporter tous les graphiques trouves dans le classeur.
+graphiques_exportes = []
+visible = false
+
+[mail]
+objet = "Flash hebdomadaire - semaine {semaine}"
+expediteur = ""
+destinataires = ["a.completer@example.com"]
+copie = []
+# true  : cree un brouillon Outlook et l'affiche (recommande au demarrage)
+# false : envoie directement (a n'activer qu'une fois la confiance etablie)
+brouillon = true
+# Joint le classeur Excel de la semaine au mail.
+joindre_classeur = true
+
+[alertes]
+# Destinataires des alertes qualite (pipeline en echec, controles KO).
+destinataires = ["a.completer@example.com"]
+
+[publication]
+# "python" : graphiques matplotlib (aucune dependance Office, phase 2)
+# "excel"  : graphiques du classeur exportes en PNG (phase 1)
+moteur_graphiques = "excel"
