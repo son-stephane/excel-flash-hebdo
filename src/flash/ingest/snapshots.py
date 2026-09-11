@@ -133,7 +133,12 @@ def lire_brut(chemin: Path, schema: SchemaRapport) -> pd.DataFrame:
             engine="python",
         )
     elif fmt.format == "xlsx":
-        donnees = pd.read_excel(chemin, dtype=str)
+        # Volontairement SANS dtype=str : une cellule de type date d'Excel se
+        # rendrait alors en "2026-03-12 00:00:00", que le format declare ne
+        # saurait pas relire, et toute la colonne serait perdue. En la laissant
+        # typee, elle traverse la conversion intacte. Pour un .xlsx, les
+        # reglages separateur / encodage / decimal n'ont aucun effet.
+        donnees = pd.read_excel(chemin)
     else:
         raise SchemaInattendu(f"[{schema.nom}] format non supporte : {fmt.format}")
 
@@ -170,9 +175,15 @@ def convertir(donnees: pd.DataFrame, schema: SchemaRapport) -> pd.DataFrame:
         if colonne.type == "string":
             resultat[colonne.cible] = serie.astype("string").str.strip()
         elif colonne.type == "date":
-            resultat[colonne.cible] = pd.to_datetime(
-                serie, format=schema.fichier.format_date, errors="coerce"
-            ).dt.date
+            if pd.api.types.is_datetime64_any_dtype(serie):
+                # Deja une date (cellule Excel typee) : le format declare ne
+                # s'applique pas, la valeur est prise telle quelle.
+                converti = pd.to_datetime(serie, errors="coerce")
+            else:
+                converti = pd.to_datetime(
+                    serie, format=schema.fichier.format_date, errors="coerce"
+                )
+            resultat[colonne.cible] = converti.dt.date
         elif colonne.type in ("int", "float"):
             nettoye = (
                 serie.astype("string")
@@ -191,7 +202,13 @@ def convertir(donnees: pd.DataFrame, schema: SchemaRapport) -> pd.DataFrame:
             )
 
         if colonne.obligatoire:
+            fournies = int(serie.notna().sum())
             perdues = int(resultat[colonne.cible].isna().sum()) - int(serie.isna().sum())
+            if perdues > 0 and perdues == fournies:
+                # Aucune valeur n'a survecu : ce n'est pas un incident isole,
+                # c'est le schema qui decrit mal le fichier. Mieux vaut refuser
+                # que produire un snapshot vide dont personne ne verra le defaut.
+                raise SchemaInattendu(_message_conversion(schema, colonne, serie))
             if perdues > 0:
                 LOG.warning(
                     "[%s] %d valeurs de '%s' non convertibles en %s (mises a vide)",
@@ -199,6 +216,23 @@ def convertir(donnees: pd.DataFrame, schema: SchemaRapport) -> pd.DataFrame:
                 )
 
     return resultat
+
+
+def _message_conversion(schema: SchemaRapport, colonne, serie: pd.Series) -> str:
+    """Message d'erreur montrant ce qui a ete lu, pour corriger le schema."""
+    echantillon = [repr(v) for v in serie.dropna().head(3).tolist()]
+    detail = {
+        "date": f"format_date = {schema.fichier.format_date!r}",
+        "int": f"decimal = {schema.fichier.decimal!r}",
+        "float": f"decimal = {schema.fichier.decimal!r}",
+    }.get(colonne.type, "")
+    return (
+        f"[{schema.nom}] aucune valeur de '{colonne.cible}' (colonne source "
+        f"{colonne.source!r}) n'a pu etre convertie en {colonne.type}.\n"
+        f"  Valeurs lues : {', '.join(echantillon) or '(aucune)'}\n"
+        f"  Reglage en cause : {detail}\n"
+        f"  -> corriger le bloc [fichier] de config/schemas/{schema.nom}.toml."
+    )
 
 
 def appliquer_filtre(donnees: pd.DataFrame, schema: SchemaRapport) -> pd.DataFrame:

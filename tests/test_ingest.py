@@ -78,3 +78,47 @@ def test_relance_n_empile_pas_les_archives(cfg):
         snapshots.ingerer(cfg, "ventes", "2026-W37")
 
     assert len(list(Emplacements(cfg).raw("2026-W37").glob("*.csv"))) == 1
+
+
+def test_xlsx_conserve_les_dates_typees(cfg, projet):
+    """Une cellule date d'Excel n'est pas un texte : le format declare ne doit
+    pas s'y appliquer, sinon toute la colonne est perdue silencieusement."""
+    schema = projet / "config" / "schemas" / "ventes.toml"
+    schema.write_text(
+        schema.read_text(encoding="utf-8").replace('format = "csv"', 'format = "xlsx"'),
+        encoding="utf-8",
+    )
+    from flash.config import charger
+
+    cfg = charger(projet)
+
+    dossier = Emplacements(cfg).inbox
+    dossier.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame(
+        {"Id": ["L1", "L2"], "Date": [JOUR, JOUR], "Statut": ["Ouvert", "Clos"],
+         "Montant": [1234.56, 10.0]}
+    ).to_excel(dossier / "ventes_export.xlsx", index=False)
+
+    snapshots.ingerer(cfg, "ventes", "2026-W37")
+    donnees = snapshots.lire_snapshot(cfg, "ventes", "2026-W37")
+
+    assert donnees["date_operation"].notna().all()
+    assert donnees["date_operation"].iloc[0] == JOUR
+    assert donnees["montant"].tolist() == [1234.56, 10.0]
+
+
+def test_format_de_date_errone_est_refuse(cfg):
+    """Un schema qui decrit mal le fichier doit echouer bruyamment, plutot que
+    de produire un snapshot aux dates vides que personne ne remarquera."""
+    ecrire_export(
+        Emplacements(cfg).raw("2026-W37"),
+        [{"Id": "L1", "Date": "2026-09-08", "Statut": "Ouvert", "Montant": "10,00"}],
+    )
+
+    with pytest.raises(snapshots.SchemaInattendu) as erreur:
+        snapshots.ingerer(cfg, "ventes", "2026-W37")
+
+    message = str(erreur.value)
+    assert "date_operation" in message
+    assert "format_date" in message      # le reglage en cause est nomme
+    assert "'2026-09-08'" in message     # la valeur lue est montree

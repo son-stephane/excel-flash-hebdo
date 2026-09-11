@@ -10,6 +10,9 @@
 nom = "rapport_b"
 libelle = "Activite hebdomadaire - perimetre B"
 
+# Pour un .xlsx, seuls "motif" et "format" comptent : separateur, encodage et
+# decimal ne s'appliquent qu'au CSV, et les cellules de type date d'Excel sont
+# reprises telles quelles sans passer par "format_date".
 [fichier]
 motif = "*rapport_b*"          # motif de reconnaissance du fichier telecharge
 format = "csv"                 # csv | xlsx

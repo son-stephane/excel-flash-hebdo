@@ -235,16 +235,34 @@ flash ingerer
 celles réellement présentes. Recopier les vraies dans les blocs
 `[[colonnes]]`, relancer. Deux ou trois tours suffisent généralement.
 
-### Les quatre réglages qui coincent
+### Les réglages qui coincent
 
 Tous dans le bloc `[fichier]`, par ordre de fréquence :
 
-| Réglage | Valeurs usuelles |
-|---|---|
-| `encodage` | `cp1252` pour un export Windows classique, `utf-8-sig` sinon |
-| `separateur` | `;` en France, `,` pour un export anglo-saxon |
-| `format_date` | `%d/%m/%Y`, `%Y-%m-%d` |
-| `decimal` | `,` ou `.` |
+| Réglage | Valeurs usuelles | CSV | XLSX |
+|---|---|:-:|:-:|
+| `format` | `csv` ou `xlsx` | ✓ | ✓ |
+| `motif` | `*commandes*` | ✓ | ✓ |
+| `encodage` | `cp1252` pour un export Windows classique, `utf-8-sig` sinon | ✓ | — |
+| `separateur` | `;` en France, `,` pour un export anglo-saxon | ✓ | — |
+| `decimal` | `,` ou `.` | ✓ | — |
+| `format_date` | `%d/%m/%Y`, `%Y-%m-%d` | ✓ | — |
+
+**Si tes exports sont des `.xlsx`, il n'y a ni séparateur ni encodage** : mets
+simplement `format = "xlsx"` et laisse le reste tel quel, ces champs sont
+ignorés. Les cellules de type date d'Excel sont reprises telles quelles, sans
+passer par `format_date`.
+
+Si un format est mal réglé, l'ingestion **refuse** le fichier plutôt que de
+produire un snapshot aux colonnes vides. Le message nomme le réglage en cause
+et montre les valeurs réellement lues :
+
+```
+[ventes] aucune valeur de 'date_operation' (colonne source 'Date') n'a pu etre convertie en date.
+  Valeurs lues : '2026-09-08', '2026-09-09'
+  Reglage en cause : format_date = '%d/%m/%Y'
+  -> corriger le bloc [fichier] de config/schemas/ventes.toml.
+```
 
 ### Les trois blocs à remplir ensuite
 
