@@ -6,13 +6,15 @@ et d'un classeur Excel.
 
 ```
 extraction.xlsx ─┐
-                 ├─► filtre date + segment ─► volumes par DR ─┐
-objectifs.xlsx ──┘                                            ├─► R/O, écart
-                                                              │
-                                        ┌─────────────────────┴──────────┐
-                                        ▼                                ▼
-                            rapport.html (autonome)          rapport.xlsx (graphique Excel)
+                 ├─► filtre date + segment ─► volumes par DR ─► R/O, écart
+objectifs.xlsx ──┘                                    │
+                                                      ├─► rapport.html          page autonome
+                                                      ├─► rapport.xlsx          nouveau classeur
+                                                      └─► classeur existant     onglets remplis
 ```
+
+Les trois restitutions vivent en parallèle : le classeur historique continue
+d'être alimenté pendant que les deux nouvelles formes s'installent.
 
 Le téléchargement des fichiers depuis le site n'est pas couvert : déposer les
 classeurs dans `data\entrees\` et lancer la commande.
@@ -43,6 +45,21 @@ Les sorties arrivent dans `data\sorties\<semaine>\`.
 | `rapport run --rapport activite` | un seul rapport |
 | `rapport liste` | rapports configurés |
 | `rapport verifier` | les fichiers attendus sont-ils présents ? |
+
+## Les trois sorties
+
+Chaque exécution écrit dans `data\sorties\<semaine>\` :
+
+| Fichier | Usage |
+|---|---|
+| `<rapport>_<semaine>.html` | page autonome, sans ressource externe : lisible hors ligne, envoyable par mail |
+| `<rapport>_<semaine>.xlsx` | nouveau classeur, tableau formaté et graphique Excel natif |
+| `rapport_existant_<semaine>.xlsx` | copie du classeur historique, ses trois onglets remplis |
+| `<rapport>_<semaine>.png` | le graphique seul |
+
+Le classeur historique part d'un modèle placé dans `templates\classeur\`, qui
+n'est jamais modifié. Voir
+[docs/ancienne-version-excel.md](docs/ancienne-version-excel.md).
 
 ## Ce que produit le rapport
 
@@ -98,9 +115,11 @@ src/rapports/
   sorties/html.py             page autonome
   pipeline.py                 enchaînement complet
   cli.py                      ligne de commande
+  sorties/classeur_existant.py  remplissage du classeur historique
 templates/rapport.html.j2     gabarit du rapport HTML
+templates/classeur/           le classeur historique, modèle jamais modifié
 scripts/generer_exemple.py    fichiers d'exemple
-tests/                        33 tests, dont les règles de calcul
+tests/                        43 tests, dont les règles de calcul
 ```
 
 ## Tests
@@ -113,3 +132,4 @@ pytest
 
 - [docs/execution.md](docs/execution.md) — installation, exécution hebdomadaire, dépannage
 - [docs/ajouter-un-rapport.md](docs/ajouter-un-rapport.md) — ajouter un rapport, et ce qui demande du code
+- [docs/ancienne-version-excel.md](docs/ancienne-version-excel.md) — faire vivre le classeur historique (sans notion technique)

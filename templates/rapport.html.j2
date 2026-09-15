@@ -13,7 +13,7 @@
     --encre-douce: {{ couleurs.encre_douce }};
     --encre-pale: {{ couleurs.encre_pale }};
     --trait: {{ couleurs.trait }};
-    --bleu: {{ couleurs.bleu }};
+    --accent: {{ couleurs.accent }};
     --fond: {{ couleurs.fond }};
     --fond-doux: {{ couleurs.fond_doux }};
   }
@@ -53,7 +53,7 @@
   table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
   th, td { padding: 9px 12px; text-align: right; white-space: nowrap; }
   th {
-    background: var(--bleu); color: #fff; font-weight: 600; font-size: 12px;
+    background: var(--accent); color: #fff; font-weight: 600; font-size: 12px;
     text-align: right; position: sticky; top: 0;
   }
   th:first-child, td:first-child { text-align: left; }
@@ -116,7 +116,7 @@
           <td>{{ ligne.realise_cumul }}</td>
           <td>{{ ligne.objectif_debut_annee }}</td>
           <td>{{ ligne.ro }}</td>
-          <td style="color:{{ ligne.couleur_ecart }}">{{ ligne.ecart }}</td>
+          <td style="color:{{ ligne.couleur_ecart }}">{{ ligne.fleche_ecart }} {{ ligne.ecart }}</td>
           <td>{{ ligne.objectif_annuel }}</td>
           <td>{{ ligne.part_annuel }}</td>
         </tr>

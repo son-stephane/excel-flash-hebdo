@@ -77,6 +77,21 @@ rapport run
 Chaque rapport écrit ses propres fichiers dans `data\sorties\<semaine>\`,
 préfixés par son `nom`. Ils ne se marchent jamais dessus.
 
+### 4. Le classeur historique, si le rapport doit y être collé
+
+Ajouter un bloc par onglet à remplir :
+
+```toml
+[[classeur_existant.onglets]]
+onglet = "Resiliations"      # nom de l'onglet, exactement comme dans Excel
+contenu = "synthese"         # donnees | objectifs | synthese
+rapport = "resiliations"     # de quel rapport viennent ces données
+cellule = "A2"               # les titres restent en ligne 1
+```
+
+Un onglet ne peut recevoir qu'un seul bloc : deux blocs visant le même onglet
+sont refusés au chargement.
+
 ---
 
 ## Les champs, un par un

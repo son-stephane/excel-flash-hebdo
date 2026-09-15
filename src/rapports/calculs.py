@@ -47,6 +47,11 @@ class Resultat:
     tableau: pd.DataFrame
     lignes_lues: int
     lignes_apres_filtre: int
+    # Les lignes de l'extraction reellement retenues : filtrees sur le segment
+    # ET sur la periode du cumul. C'est ce bloc que l'on colle dans le
+    # classeur existant, a la place du copier-coller manuel.
+    donnees_filtrees: pd.DataFrame = field(default_factory=pd.DataFrame)
+    objectifs: pd.DataFrame = field(default_factory=pd.DataFrame)
     avertissements: list[str] = field(default_factory=list)
 
     @property
@@ -193,6 +198,8 @@ def calculer(
         tableau=complet[COLONNES],
         lignes_lues=lignes_lues,
         lignes_apres_filtre=len(retenu),
+        donnees_filtrees=retenu[dans_le_cumul].reset_index(drop=True),
+        objectifs=objectifs.copy(),
         avertissements=avertissements,
     )
     LOG.info("Resultat : %s", resultat.resume())

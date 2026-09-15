@@ -38,7 +38,7 @@ Vérifier :
 pytest
 ```
 
-33 tests verts.
+43 tests verts.
 
 > **L'activation ne vaut que pour la fenêtre PowerShell en cours.** À chaque
 > nouvelle session, refaire `.venv\Scripts\Activate.ps1`. Sans activation, les
@@ -133,7 +133,16 @@ Trois fichiers sont produits dans `data\sorties\<semaine>\` :
 |---|---|
 | `<rapport>_<semaine>.html` | page autonome : tableau et graphique, aucune ressource externe |
 | `<rapport>_<semaine>.xlsx` | tableau formaté et **vrai** graphique Excel, modifiable |
+| `rapport_existant_<semaine>.xlsx` | copie du classeur historique, ses trois onglets remplis |
 | `<rapport>_<semaine>.png` | le graphique seul, si besoin de l'insérer ailleurs |
+
+Les trois restitutions vivent en parallèle, le temps que les nouvelles formes
+s'installent. Pour ne plus produire le classeur historique :
+
+```toml
+[classeur_existant]
+actif = false
+```
 
 Relancer la même semaine écrase les fichiers : le traitement est rejouable
 sans rien dupliquer.
@@ -193,6 +202,15 @@ mais méritent un regard.
 quand un classeur est ouvert sont automatiquement ignorés. En revanche, une
 sortie ne peut pas être réécrite si elle est ouverte : fermer le classeur
 avant de relancer.
+
+**Le classeur historique n'est pas produit** — le modèle est introuvable. Ce
+dossier n'est pas versionné : sur un poste neuf, générer l'exemple
+(`python scripts\generer_modele_classeur.py`) ou y déposer le vôtre. Voir
+[ancienne-version-excel.md](ancienne-version-excel.md).
+
+**Un onglet du classeur historique reste vide** — son nom ne correspond pas à
+celui déclaré dans `[[classeur_existant.onglets]]`. Le message d'exécution
+liste les onglets réellement présents.
 
 **Les chiffres ne correspondent pas à ceux calculés à la main** — vérifier
 dans cet ordre : le segment filtré, la semaine demandée, et le fait que le

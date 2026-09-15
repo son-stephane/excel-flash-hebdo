@@ -4,6 +4,11 @@ data/
 # Secrets et surcharges du poste
 config/config.local.toml
 
+# Le classeur historique n'est jamais versionne : c'est un document interne.
+# En generer un d'exemple avec scripts/generer_modele_classeur.py.
+templates/classeur/*.xlsx
+templates/classeur/*.xlsm
+
 # Python
 __pycache__/
 *.py[cod]

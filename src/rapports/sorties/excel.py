@@ -76,7 +76,7 @@ def _entete_document(feuille, resultat: Resultat) -> None:
 
 
 def _tableau(feuille, resultat: Resultat) -> None:
-    fond_entete = PatternFill("solid", fgColor=_sans_diese(style.BLEU))
+    fond_entete = PatternFill("solid", fgColor=_sans_diese(style.ROUGE))
     fond_total = PatternFill("solid", fgColor=_sans_diese(style.FOND_DOUX))
     filet = Side(style="thin", color=_sans_diese(style.TRAIT))
     bordure = Border(bottom=filet)

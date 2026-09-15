@@ -19,6 +19,7 @@ RACINE_PROJET = Path(__file__).resolve().parents[2]
 
 ROLES_SOURCE = ("date", "segment", "dr")
 ROLES_OBJECTIFS = ("dr", "debut_annee", "annuel")
+CONTENUS = ("donnees", "objectifs", "synthese")
 
 
 class ConfigurationInvalide(RuntimeError):
@@ -52,11 +53,45 @@ class Rapport:
         return self.colonnes["dr"]
 
 
+@dataclass(frozen=True)
+class OngletCollage:
+    """Un onglet du classeur existant, et ce que l'on y colle."""
+
+    onglet: str
+    contenu: str
+    rapport: str
+    cellule: str = "A2"
+    avec_entetes: bool = False
+    effacer_avant: bool = True
+
+
+MOTEURS = ("auto", "excel", "openpyxl")
+
+
+@dataclass(frozen=True)
+class ClasseurExistant:
+    actif: bool
+    modele: str
+    moteur: str
+    onglets: tuple[OngletCollage, ...]
+
+    def pour_rapport(self, nom: str) -> tuple[OngletCollage, ...]:
+        return tuple(o for o in self.onglets if o.rapport == nom)
+
+
 @dataclass
 class Config:
     general: dict[str, Any]
     rapports: dict[str, Rapport]
     racine: Path
+    classeur_existant: ClasseurExistant | None = None
+
+    @property
+    def modele_classeur(self) -> Path:
+        if self.classeur_existant is None:
+            raise ConfigurationInvalide("Aucun classeur existant configure")
+        chemin = Path(self.classeur_existant.modele).expanduser()
+        return chemin if chemin.is_absolute() else (self.racine / chemin)
 
     @property
     def noms(self) -> list[str]:
@@ -145,6 +180,57 @@ def _construire_rapport(brut: dict[str, Any], rang: int) -> Rapport:
     )
 
 
+def _construire_classeur(brut: dict[str, Any], noms_rapports: set[str]) -> ClasseurExistant | None:
+    if not brut:
+        return None
+
+    onglets = []
+    for rang, entree in enumerate(brut.get("onglets", [])):
+        ou = f"classeur_existant.onglets[{rang}]"
+        for champ in ("onglet", "contenu", "rapport"):
+            if not entree.get(champ):
+                raise ConfigurationInvalide(f"{ou} : champ obligatoire '{champ}' manquant")
+        if entree["contenu"] not in CONTENUS:
+            raise ConfigurationInvalide(
+                f"{ou} : contenu {entree['contenu']!r} inconnu. "
+                f"Valeurs possibles : {list(CONTENUS)}"
+            )
+        if entree["rapport"] not in noms_rapports:
+            raise ConfigurationInvalide(
+                f"{ou} : rapport {entree['rapport']!r} inconnu. "
+                f"Rapports configures : {sorted(noms_rapports)}"
+            )
+        onglets.append(
+            OngletCollage(
+                onglet=entree["onglet"],
+                contenu=entree["contenu"],
+                rapport=entree["rapport"],
+                cellule=entree.get("cellule", "A2"),
+                avec_entetes=bool(entree.get("avec_entetes", False)),
+                effacer_avant=bool(entree.get("effacer_avant", True)),
+            )
+        )
+
+    doublons = [o.onglet for o in onglets if [x.onglet for x in onglets].count(o.onglet) > 1]
+    if doublons:
+        raise ConfigurationInvalide(
+            f"classeur_existant : plusieurs blocs visent le meme onglet {sorted(set(doublons))}"
+        )
+
+    moteur = brut.get("moteur", "auto")
+    if moteur not in MOTEURS:
+        raise ConfigurationInvalide(
+            f"classeur_existant.moteur : {moteur!r} inconnu. Valeurs possibles : {list(MOTEURS)}"
+        )
+
+    return ClasseurExistant(
+        actif=bool(brut.get("actif", True)),
+        modele=brut.get("modele", "templates/classeur/rapport_existant.xlsx"),
+        moteur=moteur,
+        onglets=tuple(onglets),
+    )
+
+
 def charger(racine: Path | None = None) -> Config:
     racine = Path(racine or RACINE_PROJET).resolve()
     principal = racine / "config" / "rapports.toml"
@@ -172,4 +258,8 @@ def charger(racine: Path | None = None) -> Config:
     for cle in ("dossier_entrees", "dossier_sorties"):
         general.setdefault(cle, f"data/{cle.split('_')[1]}")
 
-    return Config(general=general, rapports=rapports, racine=racine)
+    classeur = _construire_classeur(reglages.get("classeur_existant", {}), set(rapports))
+
+    return Config(
+        general=general, rapports=rapports, racine=racine, classeur_existant=classeur
+    )

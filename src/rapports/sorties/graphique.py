@@ -36,16 +36,16 @@ def produire(resultat: Resultat, chemin: Path) -> Path | None:
     ax.set_facecolor(style.FOND)
 
     barres = ax.bar(
-        donnees["code_dr"], donnees["ro"], width=0.62, color=style.BLEU, zorder=3
+        donnees["code_dr"], donnees["ro"], width=0.62, color=style.ROUGE, zorder=3
     )
 
     # Reference : l'objectif. C'est par rapport a ce trait que tout se lit.
-    ax.axhline(1.0, color=style.ENCRE_DOUCE, linewidth=1.2, linestyle="--", zorder=4)
+    ax.axhline(1.0, color=style.NOIR, linewidth=1.2, linestyle="--", zorder=4)
     ax.annotate(
         "objectif",
         xy=(1.0, 1.0), xycoords=("axes fraction", "data"), xytext=(-4, 4),
         textcoords="offset points", ha="right", va="bottom",
-        fontsize=8.5, color=style.ENCRE_DOUCE,
+        fontsize=8.5, color=style.NOIR,
     )
 
     ax.bar_label(

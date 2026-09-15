@@ -15,7 +15,7 @@ from . import calculs, sources
 from .config import Config, Rapport
 from .journal import journal
 from .semaines import valider
-from .sorties import excel, graphique, html
+from .sorties import classeur_existant, excel, graphique, html
 
 LOG = journal("pipeline")
 
@@ -28,6 +28,7 @@ class Sortie:
     classeur: Path
     page_html: Path
     image: Path | None
+    collage: classeur_existant.ResultatCollage | None = None
 
     def resume(self) -> str:
         lignes = [
@@ -36,6 +37,11 @@ class Sortie:
             f"  Excel : {self.classeur}",
             f"  HTML  : {self.page_html}",
         ]
+        if self.collage is not None:
+            lignes.append(f"  Ancien classeur : {self.collage.chemin}")
+            lignes.append(f"    {self.collage.resume()}")
+            for message in self.collage.avertissements:
+                lignes.append(f"  [!] {message}")
         for message in self.resultat.avertissements:
             lignes.append(f"  [!] {message}")
         return "\n".join(lignes)
@@ -67,7 +73,34 @@ def executer(cfg: Config, nom: str, semaine: str) -> Sortie:
         {"source": chemin_source.name, "objectifs": chemin_objectifs.name},
     )
 
+    collage = _remplir_classeur_existant(cfg, rapport, resultat, semaine)
+
     return Sortie(
         rapport=rapport, semaine=semaine, resultat=resultat,
-        classeur=classeur, page_html=page, image=image,
+        classeur=classeur, page_html=page, image=image, collage=collage,
     )
+
+
+def _remplir_classeur_existant(
+    cfg: Config, rapport: Rapport, resultat: calculs.Resultat, semaine: str
+) -> classeur_existant.ResultatCollage | None:
+    """Alimente le rapport historique, tant qu'il vit en parallele des nouveaux."""
+    reglages = cfg.classeur_existant
+    if reglages is None or not reglages.actif:
+        return None
+
+    onglets = reglages.pour_rapport(rapport.nom)
+    if not onglets:
+        return None
+
+    destination = (
+        cfg.dossier_sorties / semaine / f"{cfg.modele_classeur.stem}_{semaine}.xlsx"
+    )
+    try:
+        return classeur_existant.remplir(
+            {rapport.nom: resultat}, onglets, cfg.modele_classeur, destination,
+            moteur=reglages.moteur,
+        )
+    except classeur_existant.ClasseurIndisponible as exc:
+        LOG.warning("Ancien classeur non produit : %s", exc)
+        return None

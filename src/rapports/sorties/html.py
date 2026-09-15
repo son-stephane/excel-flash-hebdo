@@ -60,7 +60,7 @@ def produire(
         couleurs={
             "encre": style.ENCRE, "encre_douce": style.ENCRE_DOUCE,
             "encre_pale": style.ENCRE_PALE, "trait": style.TRAIT,
-            "bleu": style.BLEU, "fond": style.FOND, "fond_doux": style.FOND_DOUX,
+            "accent": style.ROUGE, "fond": style.FOND, "fond_doux": style.FOND_DOUX,
         },
         genere_le=dt.datetime.now().strftime("%d/%m/%Y a %H:%M"),
         fichier_source=(fichiers or {}).get("source", "—"),
@@ -82,6 +82,7 @@ def _ligne(ligne: pd.Series) -> dict:
         "ro": style.format_pourcent(ligne["ro"]),
         "ecart": style.format_ecart(ligne["ecart"]),
         "couleur_ecart": style.couleur_ecart(ligne["ecart"]),
+        "fleche_ecart": style.fleche_ecart(ligne["ecart"]),
         "objectif_annuel": style.format_entier(ligne["objectif_annuel"]),
         "part_annuel": style.format_pourcent(ligne["part_annuel"]),
         "est_total": ligne["type_ligne"] != LIGNE_DR,
@@ -103,7 +104,7 @@ def _indicateurs(resultat: Resultat) -> list[dict]:
         {
             "libelle": "R/O global",
             "valeur": style.format_pourcent(total["ro"]),
-            "detail": f"{style.format_ecart(total['ecart'])} vs objectif",
+            "detail": f"{style.fleche_ecart(total['ecart'])} {style.format_ecart(total['ecart'])} vs objectif",
             "couleur": style.couleur_ecart(total["ecart"]),
         },
         {

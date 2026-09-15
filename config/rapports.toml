@@ -55,3 +55,57 @@ segments = ["Grand Public", "Pro"]
 # Une ligne "Total hors <DR>" est ajoutee au tableau pour cette DR.
 # Laisser vide ("") pour ne pas produire cette ligne.
 dr_exclue = "DR99"
+
+
+# ===========================================================================
+# CLASSEUR EXISTANT
+#
+# Le rapport historique, celui que l'on remplit aujourd'hui par copier-coller.
+# Le script colle les memes blocs de donnees dans les memes onglets, a votre
+# place. Le modele n'est jamais modifie : une copie est produite chaque
+# semaine dans le dossier des sorties.
+#
+# Voir docs/ancienne-version-excel.md pour la marche a suivre cote Excel.
+# ===========================================================================
+
+[classeur_existant]
+actif = true
+modele = "templates/classeur/rapport_existant.xlsx"
+# "auto"     : pilote Excel si possible, sinon ecrit le fichier directement
+# "excel"    : exige Excel. A choisir si le classeur contient des TCD ou des
+#              macros : eux seuls survivent a ce moteur.
+# "openpyxl" : n'utilise jamais Excel. Rapide et portable, mais reecrit le
+#              classeur -- TCD et macros eventuels seraient perdus.
+moteur = "auto"
+
+# Un bloc par onglet a remplir.
+#   onglet        : le nom de l'onglet, EXACTEMENT comme dans Excel
+#   contenu       : "donnees" | "objectifs" | "synthese"
+#   rapport       : de quel rapport proviennent ces donnees
+#   cellule       : premiere cellule de la zone collee (coin haut-gauche)
+#   avec_entetes  : true si la ligne de titres doit etre collee aussi
+#   effacer_avant : vider la zone avant de coller (recommande)
+
+[[classeur_existant.onglets]]
+onglet = "Donnees"
+contenu = "donnees"
+rapport = "activite"
+cellule = "A2"
+avec_entetes = false
+effacer_avant = true
+
+[[classeur_existant.onglets]]
+onglet = "Objectifs"
+contenu = "objectifs"
+rapport = "activite"
+cellule = "A2"
+avec_entetes = false
+effacer_avant = true
+
+[[classeur_existant.onglets]]
+onglet = "Synthese"
+contenu = "synthese"
+rapport = "activite"
+cellule = "A2"
+avec_entetes = false
+effacer_avant = true
