@@ -1,101 +1,48 @@
-"""Fixtures : un mini-projet complet, isole, dans un dossier temporaire."""
+"""Mini-projet isole dans un dossier temporaire."""
 
 from __future__ import annotations
 
-import datetime as dt
 from pathlib import Path
 
-import pandas as pd
 import pytest
 
-from flash.config import charger
+from rapports.config import charger
 
-SETTINGS = """
-[chemins]
-racine_donnees = "data"
-inbox = "data/inbox"
-template_excel = "templates/modele.xlsx"
-sorties = "data/90_sorties"
+CONFIG = """
+[general]
+dossier_entrees = "entrees"
+dossier_sorties = "sorties"
 
-[excel]
-onglet_donnees = "DONNEES"
-tableau_donnees = "tbl_donnees"
+[[rapports]]
+nom = "activite"
+libelle = "Activite de test"
+unite = "dossiers"
+fichier = "*activite*.xlsx"
+objectifs_fichier = "*objectifs*.xlsx"
 
-[mail]
-objet = "Flash {semaine}"
-destinataires = ["test@example.com"]
-brouillon = true
+[rapports.colonnes]
+date = "Date CAV"
+segment = "Segment"
+dr = "Code DR"
 
-[alertes]
-destinataires = ["alerte@example.com"]
+[rapports.objectifs_colonnes]
+dr = "Code DR"
+debut_annee = "Objectif debut annee"
+annuel = "Objectif annuel"
 
-[publication]
-moteur_graphiques = "python"
-"""
+[rapports.filtres]
+segments = ["Grand Public", "Pro"]
 
-SCHEMA = """
-nom = "ventes"
-libelle = "Ventes de test"
-
-[fichier]
-motif = "*ventes*"
-format = "csv"
-separateur = ";"
-encodage = "utf-8"
-decimal = ","
-format_date = "%d/%m/%Y"
-
-[cle]
-colonnes = ["id_ligne"]
-colonne_date = "date_operation"
-colonnes_comparees = ["statut", "montant"]
-
-[[colonnes]]
-source = "Id"
-cible = "id_ligne"
-type = "string"
-obligatoire = true
-
-[[colonnes]]
-source = "Date"
-cible = "date_operation"
-type = "date"
-obligatoire = true
-
-[[colonnes]]
-source = "Statut"
-cible = "statut"
-type = "string"
-obligatoire = true
-
-[[colonnes]]
-source = "Montant"
-cible = "montant"
-type = "float"
-obligatoire = true
-
-[filtre]
-expression = "statut != 'Annule'"
-
-[controles]
-lignes_min = 2
-lignes_max = 100
-variation_lignes_max_pct = 50.0
-variation_total_max_pct = 50.0
-mesure_totale = "montant"
-colonnes_non_nulles = ["id_ligne", "montant"]
-unicite = ["id_ligne"]
-
-[controles.valeurs_autorisees]
-statut = ["Ouvert", "Clos"]
+[rapports.totaux]
+dr_exclue = "DR99"
 """
 
 
 @pytest.fixture
 def projet(tmp_path: Path) -> Path:
-    (tmp_path / "config" / "schemas").mkdir(parents=True)
-    (tmp_path / "config" / "settings.toml").write_text(SETTINGS, encoding="utf-8")
-    (tmp_path / "config" / "schemas" / "ventes.toml").write_text(SCHEMA, encoding="utf-8")
+    (tmp_path / "config").mkdir()
+    (tmp_path / "config" / "rapports.toml").write_text(CONFIG, encoding="utf-8")
+    (tmp_path / "entrees").mkdir()
     (tmp_path / "templates").mkdir()
     return tmp_path
 
@@ -103,3 +50,8 @@ def projet(tmp_path: Path) -> Path:
 @pytest.fixture
 def cfg(projet: Path):
     return charger(projet)
+
+
+@pytest.fixture
+def rapport(cfg):
+    return cfg.rapport("activite")

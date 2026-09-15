@@ -1,139 +1,115 @@
-# Flash hebdomadaire
+# Rapports hebdomadaires par DR
 
-Automatisation de bout en bout du flash hebdomadaire : extraction du portail,
-historisation figée, contrôles qualité, classeur Excel, graphiques et mail.
+Automatisation d'un rapport hebdomadaire : filtrage d'une extraction Excel,
+comptage par DR, confrontation aux objectifs, et production d'un rapport HTML
+et d'un classeur Excel.
 
 ```
-Portail  ──► 00_raw ──► 10_snapshots ──► contrôles ──► 30_mart ──► Excel / PNG ──► mail
- Playwright   archive     Parquet figé     bloquants     SQL        TCD, graphes   brouillon
-              horodatée   (1 par semaine)                                          Outlook
+extraction.xlsx ─┐
+                 ├─► filtre date + segment ─► volumes par DR ─┐
+objectifs.xlsx ──┘                                            ├─► R/O, écart
+                                                              │
+                                        ┌─────────────────────┴──────────┐
+                                        ▼                                ▼
+                            rapport.html (autonome)          rapport.xlsx (graphique Excel)
 ```
 
-## Pourquoi des fichiers Parquet plutôt qu'un onglet Excel
-
-L'export du portail contient **tout l'historique à chaque extraction**, soit
-~110 000 lignes par semaine. Empilées, cela fait ~5,7 millions de lignes par
-an : une feuille Excel est saturée (limite 1 048 576 lignes) au bout de neuf
-semaines, là où le même volume tient dans ~200 Mo de Parquet.
-
-Un fichier Parquet est écrit une fois et n'est plus jamais modifié. C'est ce
-qui rend le stockage compatible avec une synchro SharePoint/OneDrive : des
-fichiers qui s'ajoutent, jamais un gros fichier réécrit en permanence — donc
-pas de « copie en conflit ». DuckDB lit directement ces fichiers en SQL, sans
-serveur à installer.
-
-**SharePoint et Parquet ne s'opposent pas** : SharePoint est *l'emplacement*,
-Parquet est *le format*. Pointer `chemins.racine_donnees` vers le dossier
-synchronisé une fois le projet en production.
+Le téléchargement des fichiers depuis le site n'est pas couvert : déposer les
+classeurs dans `data\entrees\` et lancer la commande.
 
 ## Démarrage
 
-```bash
+```powershell
 python -m venv .venv
-.venv/bin/pip install -e ".[dev]"        # Windows : .venv\Scripts\pip install -e ".[windows,dev]"
-.venv/bin/python -m flash init
+.venv\Scripts\Activate.ps1
+pip install -e ".[dev]"
 ```
 
-Variante par `requirements.txt`, pour les environnements où l'installation
-passe par un miroir interne ou une revue IT. Les deux commandes sont
-nécessaires : la première installe les dépendances, la seconde le paquet
-`flash` lui-même — sans elle, `python -m flash` ne trouvera rien, le projet
-utilisant une disposition `src/`.
+Essayer sans les vrais fichiers :
 
-```bash
-pip install -r requirements-windows.txt   # ou requirements.txt hors Windows
-pip install -e . --no-deps
+```powershell
+python scripts\generer_exemple.py
+rapport run
 ```
 
-Pour essayer sans accès au portail, un générateur produit des exports factices
-qui reproduisent les deux comportements qui comptent — historique complet
-re-téléchargé, et corrections rétroactives d'une semaine à l'autre :
-
-```bash
-python scripts/make_sample_data.py --semaines 2026-W35 2026-W36 2026-W37
-python -m flash run --semaine 2026-W35 --sans-extraction --sans-mail --sans-excel
-python -m flash run --semaine 2026-W36 --sans-extraction --sans-mail --sans-excel
-python -m flash run --semaine 2026-W37 --sans-extraction --sans-excel
-```
+Les sorties arrivent dans `data\sorties\<semaine>\`.
 
 ## Commandes
 
 | Commande | Rôle |
 |---|---|
-| `flash run` | chaîne complète sur la semaine courante |
-| `flash etat` | quels fichiers sont disponibles pour la semaine |
-| `flash extraire` | télécharger depuis le portail |
-| `flash ingerer` | brut → snapshot Parquet figé |
-| `flash controler` | contrôles qualité seuls (code retour 1 si bloquant) |
-| `flash mart` | reconstruire la table agrégée |
-| `flash graphiques` | graphiques Python |
-| `flash classeur` | classeur Excel : injection, TCD, export PNG |
-| `flash mail` | préparer le mail |
-| `flash detail --ou "..."` | **remonter aux lignes sources d'un chiffre** |
-| `flash sql "..."` | requête libre sur les snapshots |
-| `flash semaines` | historique disponible |
+| `rapport run` | tous les rapports, semaine courante |
+| `rapport run --semaine 2026-W37` | une semaine précise |
+| `rapport run --rapport activite` | un seul rapport |
+| `rapport liste` | rapports configurés |
+| `rapport verifier` | les fichiers attendus sont-ils présents ? |
 
-Options utiles de `run` : `--semaine 2026-W37`, `--sans-extraction` (repartir
-d'un fichier déposé à la main), `--sans-mail`, `--sans-excel`, `--forcer`
-(publier malgré un contrôle bloquant).
+## Ce que produit le rapport
 
-## Interface pour l'utilisateur final
+Une ligne par DR, puis deux lignes de total — toutes DR, et hors la DR
+désignée dans la configuration.
 
-La personne qui exécute le flash chaque semaine n'a **rien à lancer** :
-l'interface tourne en tâche de fond et elle ouvre un favori.
+| Colonne | Signification |
+|---|---|
+| Réalisé semaine | lignes dont la date tombe dans les 7 jours |
+| Réalisé cumul | lignes du 1er janvier au dimanche de la semaine |
+| Objectif début année | lu dans le fichier des objectifs |
+| **R/O** | **réalisé cumul ÷ objectif début année** |
+| Écart | réalisé cumul − objectif début année |
+| Objectif annuel | lu dans le fichier des objectifs |
+| % objectif annuel | position du cumul dans l'année entière |
 
-```bash
-streamlit run app/streamlit_app.py --server.port 8501
+Deux règles qui évitent les malentendus :
+
+- **Le R/O porte sur le cumul, pas sur la semaine.** Comparer sept jours à un
+  objectif début d'année n'aurait pas de sens. La colonne « Réalisé semaine »
+  suit l'activité mais n'entre dans aucun ratio.
+- **Le R/O des totaux est recalculé à partir des sommes**, jamais obtenu en
+  moyennant les R/O des DR : une moyenne de ratios de poids différents ne veut
+  rien dire.
+
+## Configuration
+
+Tout est déclaratif dans `config\rapports.toml` : motifs de fichiers, noms de
+colonnes, segments à conserver, DR à sortir du total. Ajouter un rapport, c'est
+ajouter un bloc `[[rapports]]` — sans écrire de code.
+
+```toml
+[rapports.colonnes]
+date = "Date CAV"      # à gauche le rôle attendu, à droite l'en-tête du fichier
+segment = "Segment"
+dr = "Code DR"
 ```
 
-`scripts/installer_taches.ps1` installe la tâche planifiée Windows qui démarre
-cette interface à l'ouverture de session — voir `docs/mise-en-production.md`.
+Si un en-tête ne correspond pas, l'exécution s'arrête et liste les colonnes
+réellement présentes dans le fichier.
 
 ## Structure
 
 ```
-config/
-  settings.toml              réglages versionnés
-  settings.local.toml        surcharges du poste (non versionné)
-  schemas/*.toml             structure, filtrage et contrôles de chaque rapport
-src/flash/
-  extract/portail.py        Playwright : login, exécution, téléchargement
-  extract/inbox.py           mode dégradé : dépôt manuel
-  ingest/snapshots.py        brut → Parquet figé, typage, filtrage
-  quality/checks.py          contrôles bloquants
-  quality/diff.py            comparaison N / N-1, corrections rétroactives
-  transform/sql/*.sql        LA logique métier, versionnée
-  publish/excel.py           injection, refresh TCD, export PNG
-  publish/charts.py          graphiques matplotlib (moteur de secours)
-  publish/mail.py            brouillon Outlook, repli .eml
-  pipeline.py                orchestration — appelée par CLI, UI et planificateur
-  drill.py                   remontée aux lignes sources
-app/streamlit_app.py         façade utilisateur
-scripts/                     données de test, template Excel, tâches planifiées
+config/rapports.toml          toute la configuration
+src/rapports/
+  config.py                   lecture et validation de la configuration
+  semaines.py                 semaines ISO, bornes, début d'année
+  sources.py                  lecture des classeurs, contrôle des colonnes
+  calculs.py                  filtres, volumes par DR, R/O, totaux
+  sorties/graphique.py        graphique R/O (PNG)
+  sorties/excel.py            classeur avec graphique Excel natif
+  sorties/html.py             page autonome
+  pipeline.py                 enchaînement complet
+  cli.py                      ligne de commande
+templates/rapport.html.j2     gabarit du rapport HTML
+scripts/generer_exemple.py    fichiers d'exemple
+tests/                        33 tests, dont les règles de calcul
 ```
-
-## Adapter le projet à vos vrais rapports
-
-1. **Décrire les rapports** dans `config/schemas/` : un fichier par requête
-   du portail. Les noms `source` doivent correspondre exactement aux en-têtes du
-   fichier produit. Renseigner la clef métier, la colonne de date, le filtrage
-   et les seuils de contrôle.
-2. **Relever les sélecteurs du portail** avec `playwright codegen <url>` et les
-   reporter dans `SELECTEURS`, en haut de `src/flash/extract/portail.py`.
-3. **Écrire la logique métier** dans `src/flash/transform/sql/mart_flash_hebdo.sql`.
-   C'est la seule définition des chiffres publiés — ne jamais agréger ailleurs,
-   sinon la remontée aux lignes sources cesse d'être fiable.
-4. **Aligner le template Excel** (`python scripts/make_template.py`, puis
-   ajouter les TCD dans Excel avec le tableau structuré pour source).
 
 ## Tests
 
-```bash
-.venv/bin/python -m pytest
+```powershell
+pytest
 ```
 
 ## Documentation
 
-- `docs/mise-en-production.md` — déploiement Windows, planification, SharePoint
-- `docs/demarrage.md` — procédure de mise en route pas à pas
-- `docs/enquete.md` — que faire quand un graphique paraît faux
+- [docs/execution.md](docs/execution.md) — installation, exécution hebdomadaire, dépannage
+- [docs/ajouter-un-rapport.md](docs/ajouter-un-rapport.md) — ajouter un rapport, et ce qui demande du code

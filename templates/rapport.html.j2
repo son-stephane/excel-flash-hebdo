@@ -1,0 +1,149 @@
+{# Rapport hebdomadaire, page autonome : aucune ressource externe, l'image du
+   graphique est incorporee. Le fichier peut donc etre envoye par mail ou
+   depose sur un partage sans rien casser. #}
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ rapport.libelle }} — {{ semaine }}</title>
+<style>
+  :root {
+    --encre: {{ couleurs.encre }};
+    --encre-douce: {{ couleurs.encre_douce }};
+    --encre-pale: {{ couleurs.encre_pale }};
+    --trait: {{ couleurs.trait }};
+    --bleu: {{ couleurs.bleu }};
+    --fond: {{ couleurs.fond }};
+    --fond-doux: {{ couleurs.fond_doux }};
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 32px 20px; background: #f4f4f2; color: var(--encre);
+    font: 14px/1.5 "Segoe UI", -apple-system, Helvetica, Arial, sans-serif;
+  }
+  .page {
+    max-width: 1080px; margin: 0 auto; background: var(--fond);
+    border: 1px solid var(--trait); border-radius: 10px; padding: 30px 34px 34px;
+  }
+  h1 { margin: 0; font-size: 22px; font-weight: 600; }
+  .sous-titre { color: var(--encre-pale); font-size: 13px; margin-top: 4px; }
+  .filtres {
+    margin-top: 14px; padding: 10px 14px; background: var(--fond-doux);
+    border: 1px solid var(--trait); border-radius: 6px;
+    font-size: 12.5px; color: var(--encre-douce);
+  }
+  .filtres b { color: var(--encre); font-weight: 600; }
+
+  .indicateurs { display: flex; flex-wrap: wrap; gap: 12px; margin: 22px 0 6px; }
+  .indicateur {
+    flex: 1 1 180px; padding: 14px 16px; background: var(--fond-doux);
+    border: 1px solid var(--trait); border-radius: 8px;
+  }
+  .indicateur .libelle {
+    font-size: 11px; text-transform: uppercase; letter-spacing: .04em;
+    color: var(--encre-pale);
+  }
+  .indicateur .valeur { font-size: 24px; font-weight: 600; margin-top: 2px; }
+  .indicateur .detail { font-size: 12px; margin-top: 2px; color: var(--encre-douce); }
+
+  h2 { font-size: 15px; font-weight: 600; margin: 30px 0 10px; }
+
+  .cadre-tableau { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+  th, td { padding: 9px 12px; text-align: right; white-space: nowrap; }
+  th {
+    background: var(--bleu); color: #fff; font-weight: 600; font-size: 12px;
+    text-align: right; position: sticky; top: 0;
+  }
+  th:first-child, td:first-child { text-align: left; }
+  tbody tr { border-bottom: 1px solid var(--trait); }
+  tbody tr.total { background: var(--fond-doux); font-weight: 600; }
+  tbody tr.total:first-of-type { border-top: 2px solid var(--trait); }
+  .vide { color: var(--encre-pale); }
+
+  .graphique { margin-top: 26px; }
+  .graphique img { width: 100%; height: auto; display: block; }
+
+  .alertes {
+    margin-top: 24px; padding: 12px 16px; border-radius: 6px;
+    background: #fdf6e8; border: 1px solid #eda100; font-size: 13px;
+  }
+  .alertes ul { margin: 8px 0 0 18px; padding: 0; }
+
+  footer {
+    margin-top: 28px; padding-top: 14px; border-top: 1px solid var(--trait);
+    font-size: 11.5px; color: var(--encre-pale);
+  }
+  @media print { body { background: #fff; padding: 0; } .page { border: 0; } }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <h1>{{ rapport.libelle }}</h1>
+  <div class="sous-titre">Semaine {{ semaine }} — {{ libelle_semaine }}</div>
+
+  <div class="filtres">
+    <b>Segments retenus :</b> {{ segments }} &nbsp;·&nbsp;
+    <b>Cumul :</b> du 1<sup>er</sup> janvier au {{ fin_periode }} &nbsp;·&nbsp;
+    <b>Lignes retenues :</b> {{ lignes_retenues }} sur {{ lignes_lues }}
+  </div>
+
+  <div class="indicateurs">
+    {% for indicateur in indicateurs %}
+    <div class="indicateur">
+      <div class="libelle">{{ indicateur.libelle }}</div>
+      <div class="valeur">{{ indicateur.valeur }}</div>
+      {% if indicateur.detail %}
+      <div class="detail" style="color:{{ indicateur.couleur }}">{{ indicateur.detail }}</div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+
+  <h2>Détail par DR</h2>
+  <div class="cadre-tableau">
+    <table>
+      <thead>
+        <tr>{% for entete in entetes %}<th>{{ entete }}</th>{% endfor %}</tr>
+      </thead>
+      <tbody>
+        {% for ligne in lignes %}
+        <tr class="{{ 'total' if ligne.est_total else '' }}">
+          <td>{{ ligne.code_dr }}</td>
+          <td>{{ ligne.realise_semaine }}</td>
+          <td>{{ ligne.realise_cumul }}</td>
+          <td>{{ ligne.objectif_debut_annee }}</td>
+          <td>{{ ligne.ro }}</td>
+          <td style="color:{{ ligne.couleur_ecart }}">{{ ligne.ecart }}</td>
+          <td>{{ ligne.objectif_annuel }}</td>
+          <td>{{ ligne.part_annuel }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if graphique %}
+  <h2>Réalisé / objectif par DR</h2>
+  <div class="graphique">
+    <img src="data:image/png;base64,{{ graphique }}" alt="Réalisé sur objectif par DR">
+  </div>
+  {% endif %}
+
+  {% if avertissements %}
+  <div class="alertes">
+    <b>Points de vigilance</b>
+    <ul>{% for message in avertissements %}<li>{{ message }}</li>{% endfor %}</ul>
+  </div>
+  {% endif %}
+
+  <footer>
+    Généré le {{ genere_le }} — source : {{ fichier_source }}, objectifs : {{ fichier_objectifs }}.
+    Le R/O compare le cumul depuis le 1<sup>er</sup> janvier à l'objectif début d'année.
+  </footer>
+
+</div>
+</body>
+</html>

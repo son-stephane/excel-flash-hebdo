@@ -1,9 +1,0 @@
-# Outillage de developpement. Inutile sur le poste qui se contente d'executer
-# le flash chaque semaine.
-#
-#     pip install -r requirements-dev.txt
-
--r requirements.txt
-
-pytest>=8.0          # suite de tests
-ruff>=0.4            # analyse statique et formatage

@@ -1,0 +1,57 @@
+# ===========================================================================
+# CONFIGURATION DES RAPPORTS HEBDOMADAIRES
+#
+# Ajouter un rapport = ajouter un bloc [[rapports]] ci-dessous. Aucun code a
+# ecrire. Voir docs/ajouter-un-rapport.md.
+#
+# Les valeurs propres au poste (chemins reels, valeurs de filtre sensibles)
+# peuvent etre surchargees dans config/config.local.toml, non versionne.
+# ===========================================================================
+
+[general]
+# Ou sont deposes les fichiers telecharges, et ou sont ecrits les rapports.
+dossier_entrees = "data/entrees"
+dossier_sorties = "data/sorties"
+
+
+# ---------------------------------------------------------------------------
+# RAPPORT 1 -- a adapter a ton fichier reel
+# ---------------------------------------------------------------------------
+[[rapports]]
+nom = "activite"
+libelle = "Activite commerciale"
+# Ce que l'on compte : sert aux libelles du tableau et du graphique.
+unite = "dossiers"
+
+# Motif de reconnaissance du fichier dans dossier_entrees.
+fichier = "*activite*.xlsx"
+# Onglet : numero (0 = le premier) ou nom entre guillemets.
+onglet = 0
+
+# Fichier des objectifs : une ligne par DR, deux colonnes d'objectif.
+objectifs_fichier = "*objectifs*.xlsx"
+objectifs_onglet = 0
+
+# --- Colonnes du fichier source -------------------------------------------
+# A gauche le role attendu par le script, a droite l'en-tete EXACT du fichier.
+[rapports.colonnes]
+date = "Date CAV"
+segment = "Segment"
+dr = "Code DR"
+
+# --- Colonnes du fichier des objectifs ------------------------------------
+[rapports.objectifs_colonnes]
+dr = "Code DR"
+debut_annee = "Objectif debut annee"
+annuel = "Objectif annuel"
+
+# --- Filtres ---------------------------------------------------------------
+[rapports.filtres]
+# Segments conserves. Laisser la liste vide pour ne pas filtrer.
+segments = ["Grand Public", "Pro"]
+
+# --- Totaux ----------------------------------------------------------------
+[rapports.totaux]
+# Une ligne "Total hors <DR>" est ajoutee au tableau pour cette DR.
+# Laisser vide ("") pour ne pas produire cette ligne.
+dr_exclue = "DR99"

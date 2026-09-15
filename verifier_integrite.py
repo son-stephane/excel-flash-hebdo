@@ -2,19 +2,18 @@
 
     python verifier_integrite.py
 
-A lancer immediatement apres le transfert, AVANT toute installation. Compare
-chaque fichier a l'empreinte SHA-256 enregistree dans MANIFESTE.txt au moment
-de la creation de l'archive, et signale ce qui manque, ce qui est tronque et
-ce qui a ete modifie.
-
-MANIFESTE.txt n'est pas versionne : il est produit au moment de fabriquer
-l'archive de transfert. Sur un poste ou le projet est suivi par git,
-`git status` remplit le meme role et ce script est inutile.
+A lancer immediatement apres le transfert de l'archive, AVANT toute
+installation. Compare chaque fichier a son empreinte SHA-256 enregistree dans
+MANIFESTE.txt, et signale ce qui manque, ce qui est tronque et ce qui a ete
+modifie.
 
 Ce controle existe parce que pytest ne peut pas le remplacer : la suite de
-tests ne couvre pas les modules de publication, donc un fichier tronque dans
-publish/ passe les tests et n'echoue qu'a l'execution, avec un message qui ne
+tests ne couvre pas les gabarits ni la documentation, et un fichier tronque
+peut passer les tests avant d'echouer a l'execution, avec un message qui ne
 designe pas la vraie cause.
+
+MANIFESTE.txt est produit au moment de fabriquer l'archive de transfert. Sur
+un poste ou le projet est suivi par git, `git status` remplit le meme role.
 """
 
 from __future__ import annotations
@@ -62,8 +61,8 @@ def main() -> int:
     if alteres:
         print(f"\n{len(alteres)} FICHIER(S) ALTERE(S) :")
         for relatif, attendu, recu in alteres:
-            ecart = "tronque" if recu < attendu else "modifie"
-            print(f"  - {relatif:<50} {recu} octets recus, {attendu} attendus ({ecart})")
+            etat = "tronque" if recu < attendu else "modifie"
+            print(f"  - {relatif:<48} {recu} octets recus, {attendu} attendus ({etat})")
 
     if manquants or alteres:
         print("\nLe transfert est incomplet : refaire la copie de l'archive entiere.")

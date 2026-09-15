@@ -1,27 +1,13 @@
-# Dependances d'execution du flash hebdomadaire.
+# Dependances du projet.
 #
-# Ce fichier reprend le bloc [project].dependencies de pyproject.toml, qui
-# reste la reference. Il existe pour les environnements ou l'installation se
-# fait par requirements.txt (proxy d'entreprise, miroir interne, revue IT).
+# Installation complete, dependances ET paquet `rapports` :
+#     pip install -e ".[dev]"
 #
-# ATTENTION : installer ces paquets ne suffit pas. Le projet utilise une
-# disposition src/, donc le paquet `flash` doit aussi etre installe, sinon
-# `python -m flash` repondra "No module named flash" :
-#
+# Ou, si l'installation doit passer par un miroir interne, les DEUX commandes :
 #     pip install -r requirements.txt
 #     pip install -e . --no-deps
-#
-# Les bornes sont des minimums, pas des versions figees. Pour un
-# environnement reproductible, geler l'existant apres installation :
-#
-#     pip freeze > requirements.lock.txt
 
-pandas>=2.0          # lecture des exports, typage, filtrage
-pyarrow>=14.0        # ecriture et lecture des snapshots Parquet
-duckdb>=0.10         # moteur SQL sur les fichiers Parquet, sans serveur
-matplotlib>=3.8      # graphiques Python (moteur de secours et cible phase 2)
-openpyxl>=3.1        # injection dans le classeur sans passer par Excel
-jinja2>=3.1          # gabarit HTML du mail
-keyring>=24.0        # lecture du mot de passe dans le trousseau Windows
-playwright>=1.40     # pilotage du navigateur pour le telechargement
-streamlit>=1.30      # interface pour l'utilisateur final
+pandas>=2.0        # lecture des fichiers Excel, filtrage, agregations
+openpyxl>=3.1      # ecriture du classeur de sortie et de son graphique
+matplotlib>=3.8    # graphique du rapport HTML
+jinja2>=3.1        # gabarit HTML
